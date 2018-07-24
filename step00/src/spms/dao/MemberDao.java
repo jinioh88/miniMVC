@@ -151,7 +151,6 @@ public class MemberDao {
 			}
 		} catch (Exception e) {
 			throw e;
-
 		} finally {
 			try {
 				if (rs != null)
