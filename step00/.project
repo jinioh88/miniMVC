@@ -28,4 +28,26 @@
 		<nature>org.eclipse.jdt.core.javanature</nature>
 		<nature>org.eclipse.wst.jsdt.core.jsNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>WebContent/WEB-INF/lib/commons-dbcp-1.4.jar</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Downloads/JavaWebProgramming-master/Lesson05/step10/WebContent/WEB-INF/lib/commons-dbcp-1.4.jar</locationURI>
+		</link>
+		<link>
+			<name>WebContent/WEB-INF/lib/commons-pool-1.6.jar</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Downloads/JavaWebProgramming-master/Lesson05/step10/WebContent/WEB-INF/lib/commons-pool-1.6.jar</locationURI>
+		</link>
+		<link>
+			<name>WebContent/WEB-INF/lib/javax.servlet.jsp.jstl-1.2.1.jar</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Downloads/JavaWebProgramming-master/Lesson05/step10/WebContent/WEB-INF/lib/javax.servlet.jsp.jstl-1.2.1.jar</locationURI>
+		</link>
+		<link>
+			<name>WebContent/WEB-INF/lib/javax.servlet.jsp.jstl-api-1.2.1.jar</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Downloads/JavaWebProgramming-master/Lesson05/step10/WebContent/WEB-INF/lib/javax.servlet.jsp.jstl-api-1.2.1.jar</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>

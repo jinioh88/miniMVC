@@ -7,14 +7,18 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.sql.DataSource;
+
+import org.apache.commons.dbcp.BasicDataSource;
+
 import spms.util.DBConnectionPool;
 import spms.vo.Member;
 
 public class MemberDao {
-	DBConnectionPool connPool;
-	
-	public void setDbConnectionPool(DBConnectionPool connPool) {
-		this.connPool = connPool;
+	DataSource ds;
+
+	public void setDbConnectionPool(DataSource ds) {
+		this.ds = ds;
 	}
 
 	public List<Member> selectList() throws Exception {
@@ -23,7 +27,7 @@ public class MemberDao {
 		ResultSet rs = null;
 
 		try {
-			connection = connPool.getConnection();
+			connection = ds.getConnection();
 			stmt = connection.createStatement();
 			rs = stmt.executeQuery("SELECT MNO,MNAME,EMAIL,CRE_DATE" + " FROM MEMBERS" + " ORDER BY MNO ASC");
 
@@ -50,13 +54,17 @@ public class MemberDao {
 					stmt.close();
 			} catch (Exception e) {
 			}
-			if(connection != null) connPool.returnConnection(connection);
+			try {
+				if (connection != null)
+					connection.close();
+			} catch (Exception e) {
+			}
 		}
 	}
 
 	public int insert(Member member) throws Exception {
-		Connection connection = connPool.getConnection();
-		try (PreparedStatement psmt = connection.prepareStatement(
+		try (	Connection connection = ds.getConnection();
+				PreparedStatement psmt = connection.prepareStatement(
 				"INSERT INTO MEMBERS(EMAIL,PWD,MNAME,CRE_DATE,MOD_DATE)" + " VALUES (?,?,?,NOW(),NOW())");) {
 			psmt.setString(1, member.getEmail());
 			psmt.setString(2, member.getPassword());
@@ -65,17 +73,15 @@ public class MemberDao {
 			return psmt.executeUpdate();
 		} catch (Exception e) {
 			e.printStackTrace();
-		} finally {
-			if(connection != null)
-				connPool.returnConnection(connection);
-		}
+		} 
 		return 1;
 	}
 
 	public int delete(int no) throws Exception {
 		Statement stmt = null;
-		Connection connection = connPool.getConnection();
+		Connection connection = null;
 		try {
+			connection = ds.getConnection();
 			stmt = connection.createStatement();
 			return stmt.executeUpdate("DELETE FROM MEMBERS WHERE MNO=" + no);
 
@@ -89,7 +95,7 @@ public class MemberDao {
 			} catch (Exception e) {
 			}
 			if(connection!=null)
-				connPool.returnConnection(connection);
+				connection.close();
 		}
 	}
 
@@ -98,7 +104,7 @@ public class MemberDao {
 		ResultSet rs = null;
 		Connection connection = null;
 		try {
-			connection = connPool.getConnection();
+			connection = ds.getConnection();
 			stmt = connection.createStatement();
 			rs = stmt.executeQuery("SELECT MNO,EMAIL,MNAME,CRE_DATE FROM MEMBERS" + " WHERE MNO=" + no);
 			if (rs.next()) {
@@ -123,7 +129,7 @@ public class MemberDao {
 			} catch (Exception e) {
 			}
 			if(connection!=null)
-				connPool.returnConnection(connection);
+				connection.close();
 		}
 	}
 
@@ -131,7 +137,7 @@ public class MemberDao {
 		PreparedStatement stmt = null;
 		Connection connection = null;
 		try {
-			connection = connPool.getConnection();
+			connection = ds.getConnection();
 			stmt = connection.prepareStatement("UPDATE MEMBERS SET EMAIL=?,MNAME=?,MOD_DATE=now()" + " WHERE MNO=?");
 			stmt.setString(1, member.getEmail());
 			stmt.setString(2, member.getName());
@@ -148,7 +154,7 @@ public class MemberDao {
 			} catch (Exception e) {
 			}
 			if(connection!=null)
-				connPool.returnConnection(connection);
+				connection.close();
 		}
 	}
 
@@ -157,7 +163,7 @@ public class MemberDao {
 		ResultSet rs = null;
 		Connection connection = null;
 		try {
-			connection = connPool.getConnection();
+			connection = ds.getConnection();
 			stmt = connection.prepareStatement("SELECT MNAME,EMAIL FROM MEMBERS" + " WHERE EMAIL=? AND PWD=?");
 			stmt.setString(1, email);
 			stmt.setString(2, password);
@@ -181,8 +187,13 @@ public class MemberDao {
 			} catch (Exception e) {
 			}
 			if(connection!=null) 
-				connPool.returnConnection(connection);
+				connection.close();
 		}
+	}
+
+	public void setDataSource(DataSource ds2) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }
