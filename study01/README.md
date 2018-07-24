@@ -296,6 +296,146 @@
     - 웹 브라우저 요청이 들어오면, 그 웹 브라우저를 위한 HttpSession 객체가 있는지 검사하고, 없으면 새로 HttpSession객체 만든다.
     - 일정기간 동안 Timeout요청이 없으면 삭제된다. 
     - /auth/login 서블릿 요청이 있을 때 LoginServlet은 회원 정보를 데이터베이스에 찾아 Member에 담고, 다른 서블릿들이 참조할 수 있도록 HttpSession객체에 보관한다. 
+    >   HttpSession session = request.getSession();
+        session.setAttribute("member",member);
+        response.sendRedirect("../member/list");
+    - <meta http-equiv="Refresh" content="1;url=login"> // 1초후 loing url로 이동하르는 뜻
+    - <% Member member = (Member)session.getAttribute("member");%>로 꺼내올 수 있다. 
+    - JSP내장객체 session을 써서 꺼내 올 수 있다. 
+  - HttpSession 활용 - 로그아웃
+    - LogOutServlet은 HttpSession 객체를 없애기 위해 invalidate()를 호출한다. 
+    - 이 후 새로운 요청이 들어오면 HttpSession객체가 새로 만들어 진다. 
+  - ServletRequest 활용
+    - 포워딩이나 인쿨루딩을 통해 협업하는 서블릿끼리 데이터를 공휴할 수 있다. 
+    - forword(), doGet() 메서드 모두 request를 인자로 받는데, 이것이 바로 공유할 request객체이다. 
+  - JspContext의 활용
+    - JSP 페이지 내부에서만 사용될 데이터 공유.
+    - JSP 태그 핸들러에 데이터를 전달하고자 할떄 사용한다. 
+
+  - DAO 만들기
+    - DAO란 데이터를 처리를 전문으로 하는 객체이다. 
+    - 기존 서블릿에서 하던 데이터베이스 연동 코드를 MemberDao클래스로 이관한다. 
+    - MemberDao에선 ServletContext에 접근할 수 없다. 그래서 ServletContext에 보관된 DB Conncetion정보를 얻어오려고 할때, 외부로부터 Connection 객체를 주입 받기 위한 세터 메서드와 인스턴스 변수를 준비한다. 
+      >   
+          Connection coon;
+          public void setConnection(Connection conn) {
+            this.conn = conn;
+          }
+    - 이렇게 작업에 필요한 객체를 외부로부터 주입받는 것을 '의존성주입(DI)'라고 한다. == IoC
+    - 여기까지 작업으로 서블릿은 컨트롤러, Dao는 모델, JSP는 뷰의 역할 구분이 되었다. 
+
+## ServletContextListener와 객체 공유
+  - 서블릿 컨테이너는 웹 애플리케이션의 상태를 모니터링 할 수 있도록 웹 애플리케이션 시작에서 종료까지 주요한 사건에 대해 알림 기능을 제공한다. 
+  - 사건이 발생했을 때 알림을 받는 객체를 리스너 라고 부른다. 
+  - 규칙에 따라 객체를 만들어 DD파일에 등록하면 된다. 
+    > 웹애플리케이션 <--> 서블릿 컨테이너 --> 리스너 
+  - ServletContextListener의 활용
+    - 1. 웹 애플리케이션 시작하면, 서블릿 컨테이너는 ServletContextListener의 구현체에 대해 contextInitialized() 호출.
+    - 2. 리스너는 DB 커넷션 객체생성 --> DAO 객체 생성 --> DB 커넷션 객체를 DAO에 주입.
+    - 3. 서블릿들이 DAO 객체를 사용할 수 있도록 ServletContext 보관소에 저장. 
+    - 4. 애플리케이션 종료하면 서블릿 컨테이너는 리스너의 contextDestroyed() 호출. 
+  - 리스너 ServletContextListener 만들기
+    - ServletContextListener 인터페이스를 구현해야 한다. 
+    - contextInitalized()는 웹 애플리케이션이 시작될 때 호출 됨 .공용 객체를 준비한다면 여기에 작성.
+    - contextDestoryed()는 웹 애플리케이션 종료되기 전에 호출. 자원해제는 여기에 넣음. 
+  - ContextLoadListener의 배치
+    - 애노테이션을 활용한 방법이 있다. class 위에 @WebListener를 붙인다. 
+    - 두번쨰는 DD파일을 이용하는 것이다. <listener> 태그안에 작성한다. 
+
+## DB 커넷션 풀
+  - DB 커넥션 객체를 여러개 생성해 Pool에 담아 놓고 필요할때 쓰는 개념. 
+  - DB 커넥션 객체 여러개 생성할 필요성?
+    - 같은 커넥션에서 Statement가 3개 생되었다고 가정.
+    - 한개에서 예외가 발생 --> 롤백을 해야함.
+    - Statement는 롤백기능이 없음 --> 커넥션 객체를 통해 롤백 수행
+    - 같은 커넥션 객체 공유해서 모든 작업이 롤백 됨...
+    - 그러므로 각 요청에 대해 개별 DB 커넥션을 사용할 필요가 있다. 
+    - SQL작업 할 때마다 DB 커넥션을 생성한다면 속도면에서 매우 좋지 않다.
+    - 그래서 풀을 사용하도록 한다. 
+  - DB 커넥션 풀 만들기
+> 
+  package spms.util;
+
+  import java.sql.Connection;
+  import java.sql.DriverManager;
+  import java.util.ArrayList;
+
+  public class DBConnectionPool {
+	  String url;
+	  String username;
+	  String password;
+	  ArrayList<Connection> connList = new ArrayList<>();
+  
+  	public DBConnectionPool(String driver, String url, String username, String password) throws Exception {
+	  	this.url = url;
+		  this.username = username;
+		  this.password = password;
+		  Class.forName(driver);
+	  }
+	
+	  public Connection getConnection() throws Exception {
+		  if(connList.size()>0) {
+			  Connection conn = connList.get(0);
+			  if(conn.isValid(10)) {
+				  return conn;
+		  	}
+		  }
+		  return DriverManager.getConnection(url, username, password);
+	  }
+  
+	  public void returnConnection(Connection conn) throws Exception {
+		  connList.add(conn);
+	  }
+  
+  	public void closeAll() {
+		  for(Connection conn : connList) {
+			  try {conn.close();} catch(Exception e) {}
+		  }
+  	}
+  }
+
+  - ContextLoaderSistener에서 DBConnectionPool 생성 및 DAO에 주입
+  
+## DataSource와 JNDI
+  - javax.sql 
+    - java.sql 패키지의 기능을 보조하기 위해 만든 확장 패키지아다. 
+    - DriverManager를 대체하는 DataSource 인터페이스 제공.
+    - Connection 및 Starement 객체의 풀링
+    - 분산 트랜젝션 처리
+    - Rowsets의 지원
+   
+  - DataSource
+    - 서버에서 관리하기 때문에 데이터베이스나 JDBC 드라이버가 변경되도 애플리케이션을 바꿀 필요가 없다. 
+    - DriverManager는 웹 애플리케이션에서 관리해 데이터베이스의 주소가 바뀌거나 JDBC가 변경될 경우 웹 애플리케이션의 코드도 변경해야 한다.
+    - Datasource를 사용하면 Connection과 Statement 객체를 풀링할 수 있으며, 분산 트랜잭션을 다룰 수 있다. 
+    - 웹 애플리케이션 쪽에서 따로 커넥션 풀기능 작업 필요 없다. 
+    - BasicDataSource는 DataSource인터페이스를 구현한 클래스다. 
+    - DataSource 객체가 준비 됬으면 MemberDao에 주입을 해야 한다. memberDao.setDatasource(ds);
+    - DataSource로부터 커넥션을 다쓰고 커넥션을 반납해야 되는데 코드상에 반납하는 부분이 보이지 않는다?
+    - DataSource는 Connection 객체를 만들때 커넥션 대행객체(Proxy Object) PoolableConnection 객체를 리턴한다. 
+    - 이 대행 객체 안에는 진짜 커넥션을 가리키는 참조변수 _conn과 커넥션 풀을 가리키는 참조변수 _pool이 있다. 
+    - 그러므로 DataSource가 만들어준 커넥션 대행객체에 대해 close()를 호출하면, 커넥션 대행객체는 진짜 커넥션 객체를 커넥션풀에 반납한다. 
+  
+  - 서버에서 제공하는 DataSource 사용하기
+    - Tomcat 폴더에 context.xml 부분에 다음을 추가 하자
+      >   <Resource name="jdbc/studydb" auth="Container" type="javax.sql.DataSource"
+		      maxActive="10" maxIdle="3" maxWait="1000" username="root" password="1111" 
+		      driverClasName="com.mysql.jdbc.Driver" url="jdbc:mysql://localhost/studydb" closeMethod="close"/>
+  - 웹 애플리케이션에서 톰캣 서버 자원 사용
+    - DD파일에 서버 자원을 참조한다는 선언을 해주자.
+    >   <resource-ref> 
+		     <res-ref-name>jdbc/studydb</res-ref-name>
+		     <res-type>javax.sql.DataSource</res-type>
+		      <res-auth>Container</res-auth>
+	      </resource-ref>
+    - <res-ref-name> 태그 값은 context.xml에 선언하나 자원 이름. 
+    - <res-type>은 톰캣 서버에서 리턴하는 자원의 타입. 
+  - JNDI?
+    - Java Naming and Directory Interface API의 머릿글자.
+    - 이 API를 사용해 서버의 자원을 찾을 수 있따. 
+    - 서버에 자원을 찾기 위해 InitialContext객체를 생성하고, lookup() 메서드를 이용해, JNDI이름으로 등록된 서버자원을 찾는다. 
+    - DataSource가 만든 커넥션을 모두 닫아야 할 필요가 있는데, 톰캣 서버에 자동으로 해제하라고 설정되어 있어 따로 아무 작업 안해도 된다. 
+    
 
 
 
