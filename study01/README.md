@@ -269,6 +269,34 @@
   - 보관소에 값을 넣고 쓰는 방법
     - 객체.setAttribute(키, 값); // 저장
     - 객체.getAttribute(키);
-    
+  - ServletContext의 활용
+    - 데이터베이스 커넥션 객체 같은 것을 공유하고자 사용할떄 쓰면 된다. 
+    - 이렇게 하면 데이터베이스를 이용하는 모든 서블릿은 ServletContext에서 DB 커넥션 객체를 가져올 수 있다. 
+    - HttpServlet을 상속받은 클래스에서 init()에 작성한다.
+    >  ServletContext sc = this.getServletContext();
+       Class.forName(sc.getInitParameter("driver"); ...
+       sc.setAttribute("coon",conn);  // 모든 서블릿이 사용할 수 있도록 ServletContext 객체에 저장한다. 
+    - 서블릿 객체는 클라이언트의 최초 요청시 생성된다. 한번도 요청 없으면 그 서블릿은 생성안된다. 
+    - 서블릿이 생성되기 전에 미리 작업을 준비해야 하는 서블릿의 경우 클라이언트 요청이 없더라도 생성된다.
+    - DD파일에 servlet 등록시 <load-on-startup>1</load-on-startup> 태그를 추가해주자.
+    - 이런 준비 서블릿의 경우 <servlet-mapping>  태그가 없다. 
+    - 이제 기존에 서블릿마다 작성해 뒀던 Connction 소스를 다음과 같이 수정하면 된다.
+    >   
+        ServletContext sc = this.getServletContext();
+			  conn = (Connection)sc.getAttribute("conn");
+			  stmt = conn.createStatement();
+			  rs = stmt.executeQuery(
+				  	"SELECT MNO,MNAME,EMAIL,CRE_DATE" + 
+				  	" FROM MEMBERS" +
+				  	" ORDER BY MNO ASC");
+			
+			  response.setContentType("text/html; charset=UTF-8");
+  - HttpSession 활용 - 로그인
+    - 클라이언트 당 한개가 생성된다. 
+    - 웹 브라우저 요청이 들어오면, 그 웹 브라우저를 위한 HttpSession 객체가 있는지 검사하고, 없으면 새로 HttpSession객체 만든다.
+    - 일정기간 동안 Timeout요청이 없으면 삭제된다. 
+    - /auth/login 서블릿 요청이 있을 때 LoginServlet은 회원 정보를 데이터베이스에 찾아 Member에 담고, 다른 서블릿들이 참조할 수 있도록 HttpSession객체에 보관한다. 
+
+
 
           
