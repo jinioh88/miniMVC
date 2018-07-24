@@ -113,10 +113,10 @@
     - getServletInfo() : 서블릿 정보가 담김. 
     - 서블릿을 만들었으면 배치파일(web.xml) 약어로 'DD파일'에 등록해야 한다. 
     - DD 파일에 등록되지 않는 서블릿은 서블릿 컨테이너가 찾을 수 없다. 
-    - <servlet-name>은 서블릿 별명을 설정. 
-    - <servlet-class>는 패키지 이름을 포함한 서블릿 클래스명을 설정. 
+    - '<servlet-name>'은 서블릿 별명을 설정. 
+    - '<servlet-class>'는 패키지 이름을 포함한 서블릿 클래스명을 설정. 
     - 클라이언트에서 서블릿 실행을 요청할 때 URL을 사용. URL을 부여해야 클라이언트에서 요청할 수 있다. 
-    - <servlet-mapping>태그로 서블릿과 URL을 매핑한다. 
+    - '<servlet-mapping>'태그로 서블릿과 URL을 매핑한다. 
     - 서블릿 구동 절차
         - 1) 클라이언트 요청이 오면 서블릿 컨테이너는 서블릿을 찾는다.
         - 2) 만약 서블릿이 없다면, 서블릿 클래스를 로딩하고 인스턴스 준비 후 생성자 호출한다.
@@ -164,7 +164,7 @@
   - 그러므로 service()메서드 직접 구현보단 doXXX()메서드를 오버라이딩 하자. 
   - GET 요청이니까 doGet()을 오버라이딩 하믄 된다. 
   - cf) 배치 정보가 바뀌었다면 서블릿 컨테이너를 다시 시작해야 한다.         
-  - <form>태그의 action속성은 실행할 서블릿의 URL주소이다. 
+  - '<form>' 태그의 action속성은 실행할 서블릿의 URL주소이다. 
   - method 속성이 'get'이면 해당 서블릿에 doGet()을 호출하고, 'post'면 doPost()를 호출하도록 한다.
 
 ## HttpServlet으로 POST요청 다뤄보기
@@ -191,7 +191,7 @@
   - DD파일(web.xml)로 설정할 수도있고, 애노테이션으로 설정할 수 있다.
   - 가능한 소스코드와 분리해 외부 파일에 두는것을 추천한다. 
   - 데이터베이스 연결정보 같은 것을 둔다.
-  - web.xml에서 <init-parm> 태그안에 작성하면 된다. 
+  - web.xml에서 '<servlet>'태그 안에 있는 '<init-parm>' 태그안에 작성하면 된다. 
   - 서블릿 초기화 매개변수들으느 오직 그 매개변수를 선언한 서블릿에서만 사용가능하다. 
   - 서블릿 클래스에서 this.getInitParameter("변수이름"); 으로 값을 가져온다. 
 
@@ -215,7 +215,7 @@
   - doFilter() : 필터와 연결된 URL에 대해 요청이 들어오면 doFilter()가 항상 호출된다. 필터가 할 일을 작성하자. 
   - FilterChain nextFilter; //  다음 필터를 호출한다. 다음 필터가 없으면 내부적으로 서블릿의 service()를 호출한다. 
   - 사전작업 --> nextFileter.doFileter() --> 사후작업
-  - DD파일에서 <filter> 안에 작성하면 된다. <filter-mapping>은 어떤 요청에 대해 필터를 적용할지 설정해준다. 
+  - DD파일에서 '<filter>' 안에 작성하면 된다. '<filter-mapping>'은 어떤 요청에 대해 필터를 적용할지 설정해준다. 
   - 애노테이션으로도 사용가능하다. 
  
  #MVC 아키텍처
@@ -230,7 +230,7 @@
     - HttpServletRequest를 통해 얻는다. RequestDispatcher rd = request.getRequestDispatcher("/member/MemberListjsp");
     - Dispatcher 얻을 때, 반드시 어떤 서블릿(또는 JSP)로 위임할지 알려주야 한다. 
     - 이제 해당 jsp에서 서블릿이 넘겨준 회원 목록을 꺼내고자 request.getAttribute();를 호출한다. 
-    - request는 JSP내장 객체가 선언안해도 사용가능하다. 
+    - request는 JSP내장 객체가 선언안해서 사용가능하다. 
     - 출력은 다음 형식으로 한다. <a href='update?no=<%=member.getNo()%>'><%=member.getName()%></a>
 
 ## 포워딩과 인클루딩
@@ -242,8 +242,8 @@
 			request.setAttribute("error", e);
 			RequestDispatcher rd = request.getRequestDispatcher(
 					"Error.jsp");
-			rd.forward(request, response);
-
+			rd.forward(request, response);  ;
+      // 인클루디는 rd.include(request,response)
 		}
   - 인클루딩은 화면 헤더와 푸터를 등록하는데 사용 된다. 
     > MemberList.jsp에 추가
@@ -272,13 +272,13 @@
   - ServletContext의 활용
     - 데이터베이스 커넥션 객체 같은 것을 공유하고자 사용할떄 쓰면 된다. 
     - 이렇게 하면 데이터베이스를 이용하는 모든 서블릿은 ServletContext에서 DB 커넥션 객체를 가져올 수 있다. 
-    - HttpServlet을 상속받은 클래스에서 init()에 작성한다.
+    - HttpServlet을 상속받은 AppInitServlet 클래스에서 init() 메서드에 작성한다.
     >  ServletContext sc = this.getServletContext();
        Class.forName(sc.getInitParameter("driver"); ...
-       sc.setAttribute("coon",conn);  // 모든 서블릿이 사용할 수 있도록 ServletContext 객체에 저장한다. 
+       sc.setAttribute("conn",conn);  // 모든 서블릿이 사용할 수 있도록 ServletContext 객체에 저장한다. 
     - 서블릿 객체는 클라이언트의 최초 요청시 생성된다. 한번도 요청 없으면 그 서블릿은 생성안된다. 
-    - 서블릿이 생성되기 전에 미리 작업을 준비해야 하는 서블릿의 경우 클라이언트 요청이 없더라도 생성된다.
-    - DD파일에 servlet 등록시 <load-on-startup>1</load-on-startup> 태그를 추가해주자.
+    - 서블릿이 생성되기 전에 미리 작업을 준비해야 하는 서블릿의 경우 클라이언트 요청이 없더라도 웹 애플리케이션이 시작할때 자동 생성되야 한다.
+    - 이를 위해 DD파일에 servlet 등록시 <load-on-startup>1</load-on-startup> 태그를 추가해주자.
     - 이런 준비 서블릿의 경우 <servlet-mapping>  태그가 없다. 
     - 이제 기존에 서블릿마다 작성해 뒀던 Connction 소스를 다음과 같이 수정하면 된다.
     >   
@@ -306,7 +306,7 @@
     - LogOutServlet은 HttpSession 객체를 없애기 위해 invalidate()를 호출한다. 
     - 이 후 새로운 요청이 들어오면 HttpSession객체가 새로 만들어 진다. 
   - ServletRequest 활용
-    - 포워딩이나 인쿨루딩을 통해 협업하는 서블릿끼리 데이터를 공휴할 수 있다. 
+    - 포워딩이나 인클루딩을 통해 협업하는 서블릿끼리 데이터를 공휴할 수 있다. 
     - forword(), doGet() 메서드 모두 request를 인자로 받는데, 이것이 바로 공유할 request객체이다. 
   - JspContext의 활용
     - JSP 페이지 내부에서만 사용될 데이터 공유.
