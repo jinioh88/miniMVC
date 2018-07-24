@@ -218,5 +218,57 @@
   - DD파일에서 <filter> 안에 작성하면 된다. <filter-mapping>은 어떤 요청에 대해 필터를 적용할지 설정해준다. 
   - 애노테이션으로도 사용가능하다. 
  
- 
+ #MVC 아키텍처
+ ## 뷰를 분리해보자
+  - 서블릿에서 했던 페이지 작업을 JSP에 요청 위임하고, 서블릿에서 준비한 데이터를 JSP에 전달해본다.
+  - 서블릿은 UI를 생성하지 않기 때문에 출력코드가 필요 없다. 그 대신 JSP가 화면을 만들 수 있도록 데이터를 준비해야 한다. 
+  - ArrayList객체를 준비해 회원 목록을 담아 주자. ArrayList<Member> members = new ArrayList<Member>();
+  - request에 회원 목록 데이터 보관한다.
+	> 	request.setAttribute("members", members);
+  - RequestDispatcher를 이용한 forward, include
+    - 다른 서블릿이나 JSP로 작업을 위임할때 사용하는 객체가 RequestDispathcer이다. 
+    - HttpServletRequest를 통해 얻는다. RequestDispatcher rd = request.getRequestDispatcher("/member/MemberListjsp");
+    - Dispatcher 얻을 때, 반드시 어떤 서블릿(또는 JSP)로 위임할지 알려주야 한다. 
+    - 이제 해당 jsp에서 서블릿이 넘겨준 회원 목록을 꺼내고자 request.getAttribute();를 호출한다. 
+    - request는 JSP내장 객체가 선언안해도 사용가능하다. 
+    - 출력은 다음 형식으로 한다. <a href='update?no=<%=member.getNo()%>'><%=member.getName()%></a>
+
+## 포워딩과 인클루딩
+  - 포워드 방식은 작업을 한번 위임하면 다시 이전 서블릿으로 제어권이 돌아가지 않는다. 
+  - 인클루드 방식은 다른 서블릿으로 작업 위임 후, 그 서블릿이 끝나면 다시 이전 스블릿으로 제어권이 돌아간다. 
+  - 예외가 발생하면 포워딩으로 예외 화면을 보여주자. 
+  >
+    catch (Exception e) {
+			request.setAttribute("error", e);
+			RequestDispatcher rd = request.getRequestDispatcher(
+					"Error.jsp");
+			rd.forward(request, response);
+
+		}
+  - 인클루딩은 화면 헤더와 푸터를 등록하는데 사용 된다. 
+    > MemberList.jsp에 추가
+      <jsp:include page="/Header.jsp"/>
+      ...
+      <jsp:include page="/Tail.jsp"/>
+
+## 데이터 보관소
+  - 서블릿 기술은 데이터 공유를 위해 4가지 종류의 데이터 보관소를 제공한다. 
+  - 보관소는 공유 범위 기준으로 구분 된다. 
+  - 1) ServletContext 보관소
+    - 웹 애플리케이션이 시작될 때 생성되, 웹 애플리케이션 종료될때까지 유지. 
+    - 모든 서블릿이 사용할 수 있다. 
+  - 2) HttpSession 보관소
+    - 클라이언트 최초 요청 시 생성되 브라우저 닫을때 까지 유지. 
+    - 보통은 로그인할때 이 보관소 초기화 하고, 로그아웃하면 저장된 값들을 비운다. 
+  - 3) ServletRequest 보관소
+    - 클라이언트 요청이 들어올 떄 생성, 클라이언트에게 응답할 떄까지 유지됨. 
+    - 포워딩, 인클루딩하는 서블릿들 사이에서 값을 공유할 때 유용. 
+  4) JspContext 보관소
+    - JSP 페이지를 실행하는 동안만 유지.
+  
+  - 보관소에 값을 넣고 쓰는 방법
+    - 객체.setAttribute(키, 값); // 저장
+    - 객체.getAttribute(키);
+    
+
           
