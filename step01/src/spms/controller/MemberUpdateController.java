@@ -22,4 +22,9 @@ public class MemberUpdateController implements Controller {
 		}
 	}
 
+	public Object setMemberDao(MemberDao memberDao) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

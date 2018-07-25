@@ -18,4 +18,9 @@ public class MemberDeleteController implements Controller {
 		return "redirect:list.do";
 	}
 
+	public Object setMemberDao(MemberDao memberDao) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

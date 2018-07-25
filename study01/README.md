@@ -508,7 +508,60 @@
         for(String key : model.keySet()) {
           request.setAttribute(key,model.get(key));
         }
-    
+
+## DI를 이용한 빈 의존성 관리
+  - MemberListController가 작업을 수행하려면 MemberDao가 필요로한다. 
+  - 이렇게 특정작업 수행할 떄 사용하는 객체를 '의존객체'라고 하고 이 관계를 '의존 관계'라 한다.
+  - 의존객체 관리는 의존객체를 직접생성하는 고전적 방법과, 외부에서 의존 객체를 주입해주는 최근 방법이 있다.
+  - 의존 객체 필요 시 즉시 생성하는 방법
+    - 의존 객체를 사용하는 쪽에서 직접 그 객체를 생성하고 관리한다. 
+    > 
+      MemberDao memDao = new MemberDao(); 
+      memDao.setConnection(conn);
+  - 의존 객체를 미리 생성해 두었다가 필요할 때 사용하는 방법
+    - MemberDao 객체를 웹 애플리케이션이 시작할때 미리 생성하여 ServletContext에 보관해둬 필요할때 꺼내 쓴다. 
+    >
+      ServletContext sc = this.getServletContext();
+      MemberDao memDao = (MemberDao)sc.getAttribute("memberDao");
+  - 의존 객체와의 결합도 증가에 따른 문제
+    - 코드의 잦은 변경
+    - 대체가 어려움
+  - 의존 객체를 외부에서 주입하자.
+    - 위와 같은 문제들이 있어서 나온 방안이다.
+    - 의존 객체를 전문으로 관리하는 '빈 컨테이너'가 등장.
+    - 빈 컨테이너는 객체가 실행되기 전 그 객체가 필요로 하는 의존 객체를 주입해 주는 역할을 수행한다. 
+    - 위와 같은 방식을 '의존성주입(DI)'라 한다. == 역제어(IoC)
+      >
+        InitialContext initContext = new InitalContext();
+        DataSource ds = (DataSource)initContext.lookup("java:comp/env/jdbc/studydb");
+  - MemberListController에 MemberDao 주입
+    - 의존객체 주입을 위한 인스턴스 변수와 세터 메서드
+  - 페이지 컨트롤러 객체들을 준비
+    - ContextLoadListener에서 contextInialized()함수에 준비해두자. 
+    > sc.setAttribute("/auth/login.do",new LogInController().setMemberDao(memberDao));
+
+## 인터페이스를 활용해 의존객체에 대해 선택의 폭을 넓히자.
+  - 의존객체를 사용할 때 인터페이스를 사용하면, 그 자리에 다양한 구현체를 놓을 수 있다. 
+
+## 리플렉션 API(여기부터 다시 정리...)
+  - 리플렉션 API를 활용해 인스턴스를 자동으로 생성하고, 메서드를 자동으로 호출하도록 하자. 
+  - 실행 시나리오
+    1) 웹 브라우저가 회원 등록 요청 --> 사용자가 입력한 매개변수 값을 서블릿에 전달.
+    2) 프런트컨트롤러(DispatcherServlet)은 회원 등록츨 처ㅣ하는 페이지 컨트롤러에게 어떤 데이터가 필요한지 물어봄 --> 페이지 컨트롤러가 필요한 데이터의 이름과 타입 저보를 담은 배열 리턴
+    3) 프론트 컨트롤러는 ServletRequestDataBinder를 이용해 요청 매개변수로부터 페이지 컨트롤러가 원하는 형식의 값객체를 만듬
+    4) 프런트 컨트롤러는 ServletRequestDataBinder가 만들어준 값 객체를 Map에 저장.
+    5) 프런트 컨트롤러는 페이지 컨트롤러를 실행 --> 페이지 컨트롤러의 execute() 호출할 떄, 저장된 Map 객체를 매개변수로 넘김.
+  - DataBinding 인터페이스 정의
+    - 프런트 컨트롤러가 페이지 컨트롤러 실행전 원하는 데이터가 무엇인지 묻는 과정.
+    - 페이지 컨트롤러 중 클라이언트가 보낸 데이터가 필요한 경우 DataBinding 인터페이스를 구현.
+    - getDataBinders() 반환값은 데이터의 이름과 타입 정보를 담은 Object배열임.
+    >
+      public interface DataBinding {
+	    Object[] getDataBinders();
+      }
+  - 페이지 컨트롤러의 DataBinding 구현
+    - getDataBinders()에서 지정한 대로 프런트 컨트롤라가 VO객체를 무조건 생성할 것이기 때문에 Member가 있는지 여부를 판단하면 안된다.
+
 
 
           
