@@ -436,7 +436,79 @@
     - 서버에 자원을 찾기 위해 InitialContext객체를 생성하고, lookup() 메서드를 이용해, JNDI이름으로 등록된 서버자원을 찾는다. 
     - DataSource가 만든 커넥션을 모두 닫아야 할 필요가 있는데, 톰캣 서버에 자동으로 해제하라고 설정되어 있어 따로 아무 작업 안해도 된다. 
     
+# MVC 프레임워크 맨들기
+## 프런트 컨트롤러
+  - 프런트 컨트롤러 패턴
+    >
+      웹브라우저 <-> 프런트컨트롤러(DispatcherServlet) <-> 페이지 컨트롤러(Servlet)  
+                       <-> 뷰(JSP)                     <->모델(DAO)
+    - 1) 웹 브라우저에서 요청이 들어옴 -> 프런트컨트롤러가 받음 -> 프런트컨트롤러는 VO객체 생성해 클라이언트가 보낸 데이터 담음 -> ServletRequest에 VO객체 저장 -> 요청 ㄱURL에 따라 페이지 컨트롤러 선택 실행위임
+    - 2) 페이지 컨트롤러는 DAO를 사용해 VO를 처리
+    - 3) DAO는 페이지 컨트롤러 부터 받은 데이터 처리
+    - 4) DAO 호출이 끝나면, 페이지 컨트롤러는 화면을 만들 떄 사용할 데이터 준비 -> JSP가 사용할 수 있도록 ServletRequest 보관소에 저장. -> 프런트 컨트롤러에게 뷰 정보 반환
+    - 5) 프런트 컨트롤러는 페이지 컨트롤러가 알려준 JSP로 실행 위임 
+    - 6) JSP는 페이지 컨트롤러에서 준비한 데이터를 가지고 화면 생성해 출력 -> 프런트 컨트롤러는 웹 브라우저의 요청에 대한 응답완료
+    - 즉 프런트 컨트롤러는 VO 객체준비, 뷰 컴포넌트로 위임, 오류 처리등 같은 공통작업 담당
+    - 페이지 컨트롤러는 요청한 페이지 작업 수행.
+  -  프런트 컨트롤러 만들기
+    - 프런트 컨트롤러도 서블릿이라 HttpServlet 상속 받는다. 
+    - 근데 여기서 doPost, doGet을 오버라이딩 하지 않고 service()를 오버라이딩 하고 있다.
+    - 이는 서블릿컨테이너(톰켓)이 직접 호출하고 있지 않다는 뜻. 
+    - 왜 이렇게 했을까?
+    - GET, POST 뿐만아니라 다양한 요청 방식에도 대응하기 위해서다. 
+    - 요청 URL 경로를 알아내기 위함 여러 함수들이 존재 한다. 
+    - 그 중 클라이언트가 요청한 서블릿 경로를 알고 싶으면 getSerbletPath()를 호출하자. 
+    - 페이지 컨트롤러 위임은 RequestDispatcher를 통해 적절한 페이지 컨트롤러를 인클루딩 한다. 
+    - 요청 매개 변수로 부터 VO 객체 준비
+      - 페이지 컨트롤러가 필요한 데이터를 미리 준비해야 하는데, 데이터를 페이지 컨트롤러에 전달위해 요청 매개변수의 값을 꺼내 VO 객체에 담고 ServletRequest에 보관한다. 
+        >   request.setAttribute("member",new Member().setName(request.getParameter("name")...));
+    - JSP로 위임
+      - 페이지 컨트롤러 실행이 끝나면, 화면 출력위해 SerbletRequest에 보관된 뷰 URL로 실행을 위임한다. 
+      - URL이 "redirect:"로 시작하면 인클루딩 대신 sendRedirect()를 호출하자. 
+    - 오류처리
+      - 프런트 컨트롤러에서 오류를 처리담당하면, 페이지 컨트롤러에서 작성할 필요가 없어진다. 
+    - 프런트 컨틀로러 배치
+      - @WebServlet 애노테이션을 사용해 프런트 컨트롤러 배치 URL을 "*.do"로 지정한다. 
+      - 서블릿 경로 이름이 .do로 끝나믄 디스패처서블릿 처리하겠다는 의미이다. 
+  
+  - MemberListServet을 페이지 컨트롤러로 만들기
+    - JSP URL 정보를 프런트 컨트롤러에게 전달하려 SerbletRequest 보관소에 저장한다. 
+      > request.setAttribute("viewUrl","/member/MemberList.jsp");
+  - 프런트 컨트롤러를 통한 회원 목록 페이지 요청
+  - 리다이렉트를 위한 뷰 URL 설정
+    >  request.setAttribute("viewUrl","request:list.do");
 
+## 페이지 컨트롤러의 진화
+  - 기존 페이지 컨트롤러를 서블릿이 아닌 일반 클래스로 전환해 보자.
+  - 일반 클래스로 만들면 재사용성이 더 높아진다. 
+  - 호출 규칙 정의
+    - 인터페이스는 사용자와 피사용자 사이의 일관성 있는 사용을 보장한다. 
+    - 프런트컨트롤러와 페이지 컨트롤러에게 작업을 위임할때 포워드, 인클루드가 아닌 메서드 execute()를 호출한다. 
+  - 프런트 컨트롤러 변경
+    - Map 객체 준비
+      - 프런트 컨트롤러와 페이지 컨트롤러 사이에 데이터 객체를 주고받을 때 사용할 Map 객체. 
+      - MemberListController는 회원 목록을 가져오기 위해 MemberDao객체가 필요. ServletCOntext에서 가져와 담자.
+      > 
+        ServletContext sc = this.getServletContext();
+        HashMap<String,Object> model = new HashMap<>();
+        model.put("memberDao",sc.getAttribute("memberDao"));
+    - 회원 목록을 처리할 페이지 컨트롤러 준비
+      - 페이지 컨트롤러는 Controller의 구현체이기 때문에, 인터페이스 타입의 참조 변수를 선언하자.
+      - 그래야 다른 페이지 컨트롤러(MemberAddController...) 등의 객체 주소도 저장할 수 있따. 
+      >
+        Controller pageConroller = null;
+        if("/member/list.do".equals(servletPath))
+          pageController = new MmemberListController();    
+    - 페이지 컨트롤러 실행
+      - 이전에는 페이지 컨트롤러가 스블릿이라 인클루딩 방법을 사용해 실행을 위임해썼다.
+      - 이젠 MemberListController는 일반 클래스라 Controller 인터페이스에 정해진 대로 execute()메서드를 호출한다. 
+    - Map 객체에 저장된 값을 ServletRequest에 복사
+      - 페이지 컨트롤러 실행 끝난 다음, Map에 보관데어 있는 데이터나 객체를 Jsp가 사용할 수 있도록 ServletRequest에 복사하자.
+      > 
+        for(String key : model.keySet()) {
+          request.setAttribute(key,model.get(key));
+        }
+    
 
 
           
