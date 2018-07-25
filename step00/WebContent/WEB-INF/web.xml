@@ -4,14 +4,24 @@
 	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
 		http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
 	id="WebApp_ID" version="3.0">
-	<display-name>web</display-name>
+	<display-name>web06</display-name>
 	
-	<resource-ref>
-		<res-ref-name>jdbc/studydb</res-ref-name>
-		<res-type>javax.sql.DataSource</res-type>
-		<res-auth>Container</res-auth>
-	</resource-ref>
+  <!-- 컨텍스트 초기화 파라미터 -->
 
+	<!-- 필터 선언 -->
+	
+	<!-- 필터 URL 매핑 -->
+		
+	<!-- 서블릿 선언 -->
+
+	<!-- 서블릿을 URL과 연결 -->
+
+  <resource-ref>
+      <res-ref-name>jdbc/studydb</res-ref-name>
+      <res-type>javax.sql.DataSource</res-type>
+      <res-auth>Container</res-auth>
+  </resource-ref>
+  
 	<welcome-file-list>
 		<welcome-file>index.html</welcome-file>
 		<welcome-file>index.htm</welcome-file>

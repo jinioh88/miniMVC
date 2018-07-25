@@ -1,12 +1,6 @@
 package spms.servlets;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
@@ -19,48 +13,55 @@ import javax.servlet.http.HttpServletResponse;
 import spms.dao.MemberDao;
 import spms.vo.Member;
 
+// ServletContext에 보관된 MemberDao 사용하기   
 @SuppressWarnings("serial")
 @WebServlet("/member/update")
 public class MemberUpdateServlet extends HttpServlet {
-	@Override
-	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+  @Override
+  protected void doGet(
+      HttpServletRequest request, HttpServletResponse response)
+          throws ServletException, IOException {
+    try {
+      ServletContext sc = this.getServletContext();
+      MemberDao memberDao = (MemberDao)sc.getAttribute("memberDao");
 
-		try {
-			ServletContext sc = this.getServletContext();
-			MemberDao dao = (MemberDao) sc.getAttribute("memberDao");
-			Member member = dao.selectOne(Integer.parseInt(request.getParameter("no")));
+      Member member = memberDao.selectOne(
+          Integer.parseInt(request.getParameter("no")));
 
-			request.setAttribute("member", member);
+      request.setAttribute("member", member);
 
-			RequestDispatcher dispatcher = request.getRequestDispatcher("/member/MemberUpdateForm.jsp");
-			dispatcher.forward(request, response);
+      RequestDispatcher rd = request.getRequestDispatcher(
+          "/member/MemberUpdateForm.jsp");
+      rd.forward(request, response);
 
-		} catch (Exception e) {
-			e.printStackTrace();
-			request.setAttribute("error", e);
-			RequestDispatcher rd = request.getRequestDispatcher("/Error.jsp");
-			rd.forward(request, response);
-		}
-	}
+    } catch (Exception e) {
+      e.printStackTrace();
+      request.setAttribute("error", e);
+      RequestDispatcher rd = request.getRequestDispatcher("/Error.jsp");
+      rd.forward(request, response);
+    }
+  }
 
-	@Override
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+  @Override
+  protected void doPost(
+      HttpServletRequest request, HttpServletResponse response)
+          throws ServletException, IOException {
+    try {
+      ServletContext sc = this.getServletContext();
+      MemberDao memberDao = (MemberDao) sc.getAttribute("memberDao");  
+      
+      memberDao.update(new Member()
+      .setNo(Integer.parseInt(request.getParameter("no")))
+      .setName(request.getParameter("name"))
+      .setEmail(request.getParameter("email")));
 
-		try {
-			ServletContext sc = this.getServletContext();
-			MemberDao memberDao = (MemberDao) sc.getAttribute("memberDao");
-			memberDao.update(new Member().setNo(Integer.parseInt(request.getParameter("no")))
-					.setName(request.getParameter("name")).setEmail(request.getParameter("email")));
+      response.sendRedirect("list");
 
-			response.sendRedirect("list");
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			request.setAttribute("error", e);
-			RequestDispatcher rd = request.getRequestDispatcher("/Error.jsp");
-			rd.forward(request, response);
-		}
-	}
+    } catch (Exception e) {
+      e.printStackTrace();
+      request.setAttribute("error", e);
+      RequestDispatcher rd = request.getRequestDispatcher("/Error.jsp");
+      rd.forward(request, response);
+    }
+  }
 }
