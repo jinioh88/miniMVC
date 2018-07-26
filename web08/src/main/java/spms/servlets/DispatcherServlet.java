@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import spms.bind.DataBinding;
 import spms.bind.ServletRequestDataBinder;
-import spms.context.ApplicationContext;
+import org.springframework.context.ApplicationContext;
 import spms.controls.Controller;
 import spms.listeners.ContextLoaderListener;
 
