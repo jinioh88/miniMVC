@@ -564,35 +564,271 @@
 
 # 퍼시스턴스 프레임워크(나중에 정리...)
 
-#스프링 IoC 컨테이너
-## XML 기반 빈 관리 컨테이너
-  - 스프링에선 자바 객체를 빈 이라 한다. 그래서 객체 관리 컨테이너를 '빈 컨테이너'라 한다. 
-  - 스프링 IoC 컨테이너는 두 가지 방법으로 빈 정보를 다룬다. XML, 애노테이션
-  - ApplicationCOntext 인터페이스
-    - 스프링 IoC 컨테이너가 갖추어햐 할 기능들을 이 인터페이스에 정의해 두었다. 
-    - 스프링에서 빈 정보는 XML파일에 저장해 두고, ClassPathXmlApplicationContext 클래스나 FIleSystemXmlApplicationCOntext클래스를 사용해 빈을 자동 생성한다. 
-    - ClassPathXmlApplicationContext는 자바 클래스 경로에서 XML로 된 빈 설정 파일을 찾는다. 
-    - 자바 클래스 경로 : JVM이 클래스를 찾을 떄 참고하는 폴더 목록
-  - ClassPathXmlApplicationContext 사용
-    - 값을 보관하는 용도로 사용하는 클래스를 값 객체(VO)라고 한다. 
-    - 애플리케이션에서 사용할 객체는 빈 설정 파일에 선언한다.
-    - 스프링 IoC 컨테이너는 빈 설정 파일에 선언된 대로 빈을 생성한다. 
-    >
-      <beans>
-      ...
-        <bean id="product" class="com.exam.Product"/>
-      </beans>  
-    - 반드시 패키지 이름을 포함한 클래스 이름이 'class'에 와야한다. id는 객체의 식별자 이다. 
-  - IoC 컨테이너 사용
-    - IoC 컨테이너는 빈 설정대로 인스턴스를 생성하여 객체풀에 보관한다. 
-    > 
-      ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("beans.xml");
-      Product product = (Product) ctx.getBean("product");  // getBean()의 리턴타이은 Object이다.
-  - 익명 빈 선언
-    - 빈 설정할때 이름을 지정하지 않으면 컨테이너는 '패키지이름 + 클래스 이름+ #인덱스'를 빈의 이름으로 한다. 
+스프링 IoC 컨테이너
+스프링 IoC 컨테이너 사용준비
+스프링 프레임워크에서 빈 관리 컨테이너를  IoC 컨테이너라 한다. 
+1. 의존성 주입(DI)와 역제어(IoC)
+역제어의 대표 사례로 이벤트가 있다. 
+두번째 사례로 의존성 주입이 있다. 
+어떤 작업을 처리하기 위해 사용하는 객체를 의존 객체라 한다. 
+내부에서 생성하는 것이 아닌 외부에서 의존 객체를 주입하는 것.
 
-## 생성자와 프로퍼티 설정
+2. XML 기반 빈 관리 컨테이너
+  스프링에선 자바 객체를 ‘빈(Bean)’이라 한다. 그래서 객체관리 컨테이너를 ‘빈 컨테이너'라 부른다. IoC 컨테이너는 두 가지 방식으로 처리할 수 있는데, XML과 애노테이션 방법이다.
+2.1 ApplicationContext 인터페이스 
+스프링은 IoC 컨테이너가 갖추어야 할 기능들을 ApplicationContext 인터페이스에 정의해 뒀다. 
+자식들로 ClassPathXmlApplicationContext, FileSystemXmlApplicationContext, WebApplicationContext가 있다.
+ClassPathXmlApplicationContext은 자바 클래스 경로에서  XML로 된 빈 설정 파일을 찾는다.
+FileSystemXmlApplicationContext은 파일 시스템 경로에서 빈 설정 파일을 찾는다.
+WebApplicationContext는 웹 어플리케이션을 위한 IoC컨테이너로 web.xml 파일에 설정된 정보에 따라 XML을 찾는다. 
+2.2 스프링 빈 컨테이너 ClassPathXmlApplicationCOntext
+Product 클래스 정의
+빈컨테이너에서 관리할 수 있는 클래스를 만든다. 상품이름, 가격, 재고를 보관
+값을 보관하는 용도로 사용하는 클래스를 ‘값객체(VO)’라 부른다. 
+빈 설정 XML 파일 준비
+애플리케이션에서 사용할 객체는 빈 설정 파일에 선언한다. 
+스프링 IoC 컨테이너는 빈 설정 파일에 선언된 대로 빈을 생성한다. 
+	>  <bean id=”score” class=”com.exam.Product”/> </bean>
+위는 자바 코드로한다면 new com.exam.Product(); 정도 되겠다. 
+  
+스프링 IoC 컨테이너 사용
+IoC 컨테이너는 빈 설정 파일에 선언된 대로 인스턴스를 생성해 객체 풀에 보관한다. 
+public class Test {
+    public static void main(String[] args) {
+// 생성자에서 빈 설정 파일의 경로를 넘긴다.
+        ClassPathXmlApplicationContext ctx =
+                new ClassPathXmlApplicationContext("com/exam/beans.xml");
+Product product = (Product) ctx.getBean("product");
+        
+        System.out.println("합계:" + pruduct.sum());
+        System.out.println("가격:" + product.price);
+    }
+}
 
+빈 컨테이너가 준비 되면 getBean()을 호출해 빈을 꺼낸다. 인자로는 id, name값이옴
+getBean() 반환타입은 Object라 형변환 해야 한다. 
+
+2.3 name 속성으로 빈 이름 지정
+<bean> 태그를 사용해 자바 빈 설정 할 때 id 대신 name을 사용할 수 있따. 
+id , name 차이점?
+
+
+
+
+id속성
+name 속성
+용도
+빈 식별자 지정. 중복 안됨.
+인스턴스의 별명 추가할때 사용. 중복 안됨
+여러 개 이름 지정
+불가
+콤마, 세미콜론, 공백으로 여러개 지정 가능.
+첫 번쨰 이름은 컨테이너에 빈을 보관할 때 사용, 나머지는 빈의 별명
+
+2.4 익명 빈 선언
+빈 선언 시  id, name값을 지정하지 않는다. 
+컨테이너에 보관할 때 ‘패키지이름 + 클래스이름 + #인덱스'를 빈의 이름으로 사용한다. 
+인덱스는 0부터 시작한다. 
+getBean()의 인자로 클래스 타입이 오면, 같은 타입이 여러개가 있으면 에러가 난다. 
+
+3. 생성자와 프로퍼티 설정
+3.1 호출할 생성자 설정
+빈선언 시 <constructor-arg>를 이용해 호출될 생성자를 지정할 수 있다. 
+>
+	<bean id="score1" class="exam.test04.Score">
+     <constructor-arg><value type="java.lang.String">오세진</value></constructor-arg>
+     <constructor-arg><value type="float">91</value></constructor-arg>
+     <constructor-arg><value type="float">92</value></constructor-arg>
+     <constructor-arg><value type="float">93</value></constructor-arg>
+     </bean>
+public Score(String name, float kor, float eng, float matn) {...} 라는 생성자가 VO에 있을 때 <construct-arg> 태그를 사용해 호출될 생성자를 지정할 수 있다. 
+<construct-arg value=”홍길동”/>  이런식으로 지정할 수 도 있다. 
+3.2 프로퍼티 설정
+빈 설정에서 <propery>를 사용해 지정해 주자.
+프로퍼티란 클래스에서 겟터/셋터 메서드를 가리키는 용어이다. 
+>
+	<bean id="score1" class="exam.test05.Score">
+   	<property name="name"><value>오세진</value></property>
+   	<property name="kor"><value>100</value></property>
+   	<property name="eng"><value>95</value></property>
+   	<property name="math"><value>90</value></property>
+ 	</bean>
+<property name=”name” value=”오세진"/> 이 형식도 가능하다. 
+java 표현으론 Score score = new Score();  score.setName(“오세진"); 이 된다. 
+
+3.3 <bean>의 속성 이용해 생성자 / 프로퍼티 설정
+<propert>, <construt-arg>를 사용안하고 다른 방법이 있다.
+네임스페이스 ‘p’, ‘c’를 저정해서 사용하면 된다. 
+xmlns:p="http://www.springframework.org/schema/p"
+xmlns:c="http://www.springframework.org/schema/c"
+  <bean id=”socre1” class=”exam.test.Score” p:name=” 오세진" p:kor=”100” p:eng=”100” p:math=”100/>
+
+4. 의존객체 주입
+보통 지속적으로 사용할 객체는 프로퍼티에 보관한다. 
+4.1 의존객체 설정
+  <bean id=”engine” class=”exam.test.Engine” c:maker=”HD” p:cc=”2018”/>
+  <bean id=”car1” class=”exam.text.Car” />
+	<property name=”model” value=”Sonata”/>
+	<property name=”engine” ref=”engine”/>
+  </bean>
+engine 프로퍼티의 값은 Engine의 레퍼런스어야 한다. 그래서 <ref>를 썻다. 
+빈의 기본 프로포터값은 <value>를 사용하고, 빈의 레퍼런스는 <ref> 속성을 사용한다. 
+‘p’,’c’를 이용해 할수 도 있다.
+기본타입은 ‘p:프로퍼티이름', 레퍼런스타입은 ‘p:프로퍼티이름-ref’로 지정한다. 
+생성자 매개변수 설정할 때 새로 빈을 생성해 할당 하고 싶다면 <construct-arg>의 자식 태그로 <bean>을 선언하면 된다.  
+
+5. 컬렉션 값 주입
+5.1 배열 프로퍼티 값 주입
+ >
+	<bean id="car1" class="exam.test09.Car">
+        <constructor-arg value="Avante" />
+        <constructor-arg>
+            <bean class="exam.test09.Engine" p:maker="Hyundai" p:cc="1495" />
+        </constructor-arg>
+        <property name="tires">
+            <list>
+                <bean class="exam.test09.Tire" p:maker="Kumho" p:spec="P185/65R14" />
+                <bean class="exam.test09.Tire" p:maker="Kumho" p:spec="P185/65R14" />
+                <bean class="exam.test09.Tire" p:maker="Hankook" p:spec="P205/65R14" />
+                <bean class="exam.test09.Tire" p:maker="Hankook" p:spec="P205/65R14" />
+            </list>
+        </property>
+    </bean>
+배열이나 List 타입의 프로퍼티를 설정할 땐 <list> 태그를 사용한다. 
+간단한 상수값을 넣을떄는 <value>, 다른 빈의 래퍼런스를 추가할 떈 <ref bean> 새로운 빈을 넣을떈 <bean> 태그를 사용한다. 
+set 타입은 기존에 등록된 객체와 값이 같은지 조사하여 같지 않을 경우에만 Set에 추가한다. <set>  속성을 활용해 list와 같은 방식으로 사용하면 된다. 
+
+5.2 Map과 Properties 값 주입
+맵과 프로퍼티는 key, value 한 쌍을 묶어 저장한다. 
+Properties 타입의 값을 설정할 떈 <props> 태그를 사용한다. Properties에 저장할 항목은 <prop> 태그로 정의한다. 
+Map에서 <key>태그를 사용하는데 <key> 태그엔 바로 값을 넣을 수 없어서 <value>를 사용해 넣는다. 
+
+6. 팩토리 매서드와 팩토리 빈
+공장 역할을 통해 인스턴스를 얻는 빈 설정 방법이다.
+인스턴스 생성작업이 복잡한 경우 매번 생성(new)하기 부담 스럽다. 이를 해결하려 팩토리 메서드 패턴과 빌더 패턴이다. 
+팩토리 클래스는 인스턴스 생성 과정을 캡슐화 한다. 
+6.1 스태틱 팩토리 메서드를 이용한 간접 객체 생성
+팩토리 메서드 만들 떄 두가지 방법이 있다.
+스태틱으로 선언해 클래스 메서드로 만들거나, 인스턴스 메서드로 만드는 방법이 있다.
+스태틱 팩토리 만드는 방법을 먼저 보자
+>
+	public static Tire createTire(String maker) {
+        if (maker.equals("Hankook")) {
+            return createHankookTire();
+        } else {
+            return createKumhoTire();
+        }
+    }
+    
+    private static Tire createHankookTire() {
+        Tire tire = new Tire();
+        tire.setMaker("Hankook");
+        
+        Properties specProp = new Properties();
+        specProp.setProperty("width", "205");
+        specProp.setProperty("ratio", "65");
+        specProp.setProperty("rim.diameter", "14");
+        tire.setSpec(specProp);
+        
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            tire.setCreatedDate(dateFormat.parse("2018-7-5"));
+        } catch (Exception e) {}
+        
+        return tire;
+    }
+
+createTire()는 팩토리 메서드이다. 일반 클래스의 메서드를 팩토리 기능을 하도록 하려면 반드시 static으로 선언해야 한다. 
+팩토리 클래스를 사용하여 빈을 생성해 보자
+  >
+	<bean id=”hankookTire” class=”exam.test.TireFactory” factory-method=”createTire”>
+	  <constructor-arg value=”Hankook”/>
+	</bean>
+   	⇒ 자바로는 Tire hankookTire = TireFctory.createTire(“Hanook”);
+getBean()은 호출될 때마다 팩토리 메서드를 호출하지 않는다. 
+처음 빈을 만들 떄 딱 한번 호출한다. 같은 이름으로 빈을 꺼내면 같은 객체로 인식한다.
+6.2 인스턴스 팩토리 메서드를 이용한 간접 객체 생성
+앞에서 만든  TireFactory 클래스에서 모든 메서드의  static  선언을 제거
+beans.xml에서
+ >
+	<bean id=”tireFatory” class=”exam.test.TireFactory/>
+	<bean id=”hankookTire” factory-bean=”tireFactory” factory-method=”createTire”>
+	    <constructor-arg value=”Hankook”/>
+	</bean>
+	⇒ Java로 TireFactory tireFactory = new TireFactory();
+	                Tire hankkokTire = tireFactory.createTire(“Hanook”);
+factory-bean 속성에 팩토리 객체를 지정한다. 
+class속성은 지정하지 않는다. 
+factory-method 속성엔 인스턴스 팩토리 메서드 이름을 지정한다. 스테틱 메서드는 안됨.
+팩토리 메서드 매개 변수는 <constructor-arg> 태그로 지정한다. 
+6.3 스프링 규칙에 따라 팩토리 빈을 만들어보자
+팩토리빈 클래스를 만들 때 FactoryBean 인터페이스를 구현하자. 
+보통은 FactoryBean을 직접 구현하지 않고 미리 구현된 AbstractFactoryBean을 상속해 구현한다.
+빈 생성할떄 팩토리 메서드로 getObject()가 호출되는데, 이 메서드 내부적으로 createInstance() 추상메서드가 호출된다. 
+AbstractFactoryBean를 상속받았다면 createInstance()메서드를 바느시 구현하자. 
+getObjetctType()도 반드시 구현하자. 
+AbstracFactoryBean<>은 다양한 타입의 빈을 받을 수 있는 제네릭 문법이 적용됬다. 
+스프링 IoC 컨테이너는 class 속성에 주어진 클래스가 일반클래스가 아니라 FactoryBean 타입의 클래스일 경우, 이 클래스의 인스턴스를 직접 보관하지 않고, 이 클래스가 생성한 빈을 컨테이너에 보관한다. 
+
+7. 빈의 범위 설정
+스프링 IoC 컨테이너는 빈을 생성할 때 기본적으로 한개만 생성한다. 
+getBean()을 반복해도 동일한 객체가 반환된다. 
+
+
+범위
+설명
+singleton
+오직 하나의 빈만 생성(기본)
+prototype
+getBean() 호출할 때마다 빈 생성
+request
+HTTP 요청이 발생할 때마다 생성. 웹 애플리케이션에서만 적용
+session
+HTTP 세션이 생성될 때마다 빈 생성. 웹 애플리케이션에서만 적용
+globalsession
+전역세션이 준비될 떄 빈 생성. 웹 애플리케이션에서만 적용
+7.1 싱글톤과 프로토타입
+  >
+	<bean id="hyundaiEngine" class="exam.test14.Engine"
+ 	   p:maker="Hyundai" p:cc="1997"/>
+    
+<bean id="kiaEngine" class="exam.test14.Engine"
+ 	   p:maker="Kia" p:cc="3000"
+ 	   scope="prototype"/>
+빈의 범위를 설정하지 않으면 ‘singleton’이 기본 범위로 지정 된다.
+scope=”prototype”이면 빈 컨테이너에게 기아엔진을 요청할 때마다 새 Engine인스턴스를 만든다.
+
+8. 애노테이션을 이용한 의존 객체 자동 주입
+빈의 세터 메서드에 @Autowired를 선언하면 빈 컨테이너가 셋터 매개변수 타입과 일치하는 빈을 찾아 자동으로 설정해 준다. 
+@Autowired를 선언하면 해당 프로퍼티는 필수 입력항목이 된다. 
+required속성을 이용해 false로 바꾸면 필수가 아닌 선택으로 된다. 
+@ Autowired(required=fase)
+8.3 @Qualifier로 주입할 객체를 지정하기
+@Autowired는 프로퍼티에 주입할 수 있는 의존객체가 여러개 있을 경우 오류를 발생한다. 
+같은 타입이 여러개 있으면 어떤걸 넣을지 혼란하기 때문이다. 
+@Autowired와 함꼐 @Qalifier로 빈의 이름(id)로 의존 객체를 지정할 수 잇다. 
+8.4 @Resource = @Autowired + @Qualifier
+@Resource(name=”kiaEngine”)
+
+9. 빈 자동 등록
+빈 생성 대상이 되는 클래스에 @Component 애노테이션으로 표시한다. 
+스프링 IoC 컨테이너는 @Comconent가 붙은 클래스를 찾아 빈을 생성한다. 
+애노테이션 정보
+
+
+애노테이션
+설명
+@Component
+빈 생성 대상이 되는 모든 클래스에 붙일 수 있다.
+@Repository
+DAO와 같은 persistence 역할을 수행하는 클래스에 붙인다. 
+@Service
+서비스역할을 수행하는 클래스에 붙인다.
+@Controller
+MVC 구조에서 Controller 역할을 수행하는 클래스에 붙인다.
+web.xml에 <context:component-scan base-package=”exam.test”/>를 추가하자.
+위 태그는 @Component, @Repository등 빈 생성 표시자가 붙은 클래스를 검색한다.
+위를 설정하면 <context:annatation-confg> 태그가 자동 활성화 된다. 
 
 
 #Gradle
@@ -617,66 +853,7 @@
 ## Gradle 프로젝트를 웹 프로젝트로
   - 이클립스는 가사 생성된 Gradle 프로젝트를 자바 프로젝트로 인식 함. 
   - 웹 프로젝트 관련 파일을 생성해야 하는데 gradle을 이용하면 쉽게 처리 할 수 있다.
-> 
-    apply plugin: 'java'
-    apply plugin: 'eclipse-wtp'
-    apply plugin: 'war'
 
-    compileJava.options.encoding='UTF-8'
-    group = 'com.example'
-    version = '0.0.1-SNAPSHOT'
-    sourceCompatibility = 1.8
-
-    eclipse {
-        wtp {
-            facet {
-                facet name: 'jst.web', version: '3.0'
-                facet name: 'jst.java',version: '1,8'
-         }
-        }
-    }
-
-    jar{
-        manifest{
-            attributes 'Implementation-Title': 'Gradle Quickstart', 'Implementation-Version': version
-        }
-    }
-
-    repositories {
-        mavenCentral()
-    }
-
-
-    dependencies {
-        compile group: 'commons-collections', name: 'commons-collections', version:'3.2'
-        testCompile group: 'junit', name: 'junit', version: '4.+'
-    }
-
-    test {
-        systemProperties 'property': 'value'
-    }
-
-    uploadArchives {
-        repositories {
-            flatDir {
-                dirs 'repos'
-            }
-        }
-    }
-  - 소스 파일의 인코딩 형식 지정
-    - 그래들은 빌드를 수행할 떄 소스 코드의 인코딩이 OS의 기본 인코딩과 같다고 간주한다. 
-    - 한글을 위해 UTF-8을 설정해야 한다. 
-  - 소스코드의 자바 버전
-    - 1.8을 쓰므로 facet name: 'jst.java',version: '1,8'
-
-## 스프링 프레임 워크 관련 라이브러리 가져오기
-  - 'http://www.spring.io'에 접속해 Project -> SPring Framework를 클릭하자.
-  - Quick Start 부분으로가 gradle을 선택하고 정보를 복사
-  - 의존 라이브러리를 가져올 저장소 설정 - repositories{}
-    - 의존 라이브러리들이 보관되어 있는 저장소를 설정해야 한다. 
-  - 테스트 정보 설정 - test{}
-    - JUnit 실행할 때 필요한 정보는 test블록을 사용하여 설정.
-  
   
 
 
