@@ -562,6 +562,123 @@
   - 페이지 컨트롤러의 DataBinding 구현
     - getDataBinders()에서 지정한 대로 프런트 컨트롤라가 VO객체를 무조건 생성할 것이기 때문에 Member가 있는지 여부를 판단하면 안된다.
 
+# 퍼시스턴스 프레임워크(나중에 정리...)
+
+#스프링 IoC 컨테이너
+## XML 기반 빈 관리 컨테이너
+  - 스프링에선 자바 객체를 빈 이라 한다. 그래서 객체 관리 컨테이너를 '빈 컨테이너'라 한다. 
+  - 스프링 IoC 컨테이너는 두 가지 방법으로 빈 정보를 다룬다. XML, 애노테이션
+  - ApplicationCOntext 인터페이스
+    - 스프링 IoC 컨테이너가 갖추어햐 할 기능들을 이 인터페이스에 정의해 두었다. 
+    - 스프링에서 빈 정보는 XML파일에 저장해 두고, ClassPathXmlApplicationContext 클래스나 FIleSystemXmlApplicationCOntext클래스를 사용해 빈을 자동 생성한다. 
+    - ClassPathXmlApplicationContext는 자바 클래스 경로에서 XML로 된 빈 설정 파일을 찾는다. 
+    - 자바 클래스 경로 : JVM이 클래스를 찾을 떄 참고하는 폴더 목록
+  - ClassPathXmlApplicationContext 사용
+    - 값을 보관하는 용도로 사용하는 클래스를 값 객체(VO)라고 한다. 
+    - 애플리케이션에서 사용할 객체는 빈 설정 파일에 선언한다.
+    - 스프링 IoC 컨테이너는 빈 설정 파일에 선언된 대로 빈을 생성한다. 
+    >
+      <beans>
+      ...
+        <bean id="product" class="com.exam.Product"/>
+      </beans>  
+    - 반드시 패키지 이름을 포함한 클래스 이름이 'class'에 와야한다. id는 객체의 식별자 이다. 
+  - IoC 컨테이너 사용
+    - IoC 컨테이너는 빈 설정대로 인스턴스를 생성하여 객체풀에 보관한다. 
+    > 
+      ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("beans.xml");
+      Product product = (Product) ctx.getBean("product");  // getBean()의 리턴타이은 Object이다.
+  - 익명 빈 선언
+    - 빈 설정할때 이름을 지정하지 않으면 컨테이너는 '패키지이름 + 클래스 이름+ #인덱스'를 빈의 이름으로 한다. 
+
+## 생성자와 프로퍼티 설정
+
+
+
+#Gradle
+## 그래들이란?
+  - 스프링 프레임워크를 사용하려면 그와 관련된 라이브러리 파일이 필요하다.
+  - '동적 웹 프로젝트'에선 관련 사이트로 부터 라이브러리 파일을 일일이 받아야한다.
+  - 하지만 '메이븐', '그래들' 같은 전문 프로젝트 빌드 도구를 사용하면 번거로움이 사라진다. 
+
+## Gradle 프로젝트 파일 및 폴더 구조
+  - .gradle : Gradle 빌드 도구와 관련된 파일을 두는 폴더
+  - .settings : 이클립스와 관련된 설정 파일을 두는 폴더
+  - bin : 컴파일된 자바 클래스 파일을 두는 폴더
+  - build : Gradle 빌드의 실행 결과물이 놓이는 폴더
+  - src/main/java : 자바 소스파일을 두는 폴더
+  - src/main/resources : 애플리케이션이 참조하는 파일을 두는 폴더
+  - src/test/java : 단위테스트 관련 자바 소스 파일을 두는 폴더
+  - src/test/resources : 단위 테스트를 수행할 때 참조하는 파일을 두는 폴더
+  - .classpath : 이클립스가 침조하는 클래스 경로 설정 파일
+  - .project 이클립스 프로젝트 설정 파일
+  - build.gralde : Gradle 빌드 설정 파일
+  
+## Gradle 프로젝트를 웹 프로젝트로
+  - 이클립스는 가사 생성된 Gradle 프로젝트를 자바 프로젝트로 인식 함. 
+  - 웹 프로젝트 관련 파일을 생성해야 하는데 gradle을 이용하면 쉽게 처리 할 수 있다.
+> 
+    apply plugin: 'java'
+    apply plugin: 'eclipse-wtp'
+    apply plugin: 'war'
+
+    compileJava.options.encoding='UTF-8'
+    group = 'com.example'
+    version = '0.0.1-SNAPSHOT'
+    sourceCompatibility = 1.8
+
+    eclipse {
+        wtp {
+            facet {
+                facet name: 'jst.web', version: '3.0'
+                facet name: 'jst.java',version: '1,8'
+         }
+        }
+    }
+
+    jar{
+        manifest{
+            attributes 'Implementation-Title': 'Gradle Quickstart', 'Implementation-Version': version
+        }
+    }
+
+    repositories {
+        mavenCentral()
+    }
+
+
+    dependencies {
+        compile group: 'commons-collections', name: 'commons-collections', version:'3.2'
+        testCompile group: 'junit', name: 'junit', version: '4.+'
+    }
+
+    test {
+        systemProperties 'property': 'value'
+    }
+
+    uploadArchives {
+        repositories {
+            flatDir {
+                dirs 'repos'
+            }
+        }
+    }
+  - 소스 파일의 인코딩 형식 지정
+    - 그래들은 빌드를 수행할 떄 소스 코드의 인코딩이 OS의 기본 인코딩과 같다고 간주한다. 
+    - 한글을 위해 UTF-8을 설정해야 한다. 
+  - 소스코드의 자바 버전
+    - 1.8을 쓰므로 facet name: 'jst.java',version: '1,8'
+
+## 스프링 프레임 워크 관련 라이브러리 가져오기
+  - 'http://www.spring.io'에 접속해 Project -> SPring Framework를 클릭하자.
+  - Quick Start 부분으로가 gradle을 선택하고 정보를 복사
+  - 의존 라이브러리를 가져올 저장소 설정 - repositories{}
+    - 의존 라이브러리들이 보관되어 있는 저장소를 설정해야 한다. 
+  - 테스트 정보 설정 - test{}
+    - JUnit 실행할 때 필요한 정보는 test블록을 사용하여 설정.
+  
+  
+
 
 
           
